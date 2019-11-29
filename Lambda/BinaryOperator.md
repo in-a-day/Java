@@ -8,7 +8,7 @@ Interface BinaryOperator<T>
 public interface BinaryOperator<T> extends BiFUnction<T, T, T>
 ```
 
-> 同一类型的两个操作数, 返回值类型与操作类型相同. 是BiFunction的一个特例.
+> 同一类型的两个参数, 返回值类型与参数类型相同. 是BiFunction的一个特例.
 
 ```java
 static <T> BinaryOperator<T> minBy(Comparator<? super T> comparator)
