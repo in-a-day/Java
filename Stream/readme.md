@@ -8,9 +8,13 @@
 > 2. intermediate operation(中间操作)
 > 3. terminal operatioin(终止操作), 只有在这个阶段, 流才正真执行.
 
+
+
 ---
 
-## 1. 生成Stream
+
+
+##  生成Stream
 
 1. Arrays接口
 
@@ -81,11 +85,13 @@
 
 6. StreamSupport提供了一系列生成stream方法, 查看官方api
 
-7. 
+
 
 ---
 
-## intermediat operation
+
+
+## Intermediat operation
 
 ### filter, map, flatMap
 
@@ -163,7 +169,7 @@
    Stream<T> distinct();
    
    // ---- demo ----
-   // out: 1, 2, 3
+   // out: 1 2 3
    Stream.of(1, 1, 2, 3, 3).distinct().forEach(System.out::println);
    ```
 
@@ -175,7 +181,7 @@
    Stream<T> sorted(Comparator<? super T> comparator);
    
    // ---- demo ----
-   // out: 1, 2, 3
+   // out: 1 2 3
    Stream.of(2, 1, 3).sorted(Integer::compare).forEach(System.out::println);
    ```
 
@@ -185,3 +191,332 @@
    Stream<T> peek(Consumer<? super T> action);
    
    ```
+
+
+
+---
+
+
+
+## Reductions
+
+### 简单的终止操作
+
+1. count, 统计流中的元素个数.
+
+   ```java
+   long count();
+   
+   // ---- demo ----
+   // out: 8
+   System.out.println(Stream.iterator(1, a -> a + 1).limit(8).count());
+   ```
+
+2. max
+
+   ```java
+   Optional<T> max(Comparator<? super T> comparator);
+   
+   // ---- demo ----
+   Optional<String> max = Stream.of("1", "dfdsf", "dff").max(String::compareTo);
+   // out: dff
+   System.out.println(max.orElse(""));
+   ```
+
+3. min
+
+   ```java
+   Optional<T> min(Comparator<? super T> comparator);
+   
+   // ---- demo ----
+   Optional<Integer> min = Stream.of(1, 2, 3).min(Integer::compareTo);
+   // out: 1
+   System.out.println(min.orElse(0));
+   ```
+
+4. findFirst, 获取第一个元素, 常与filter一起使用
+
+   ```java
+   Optional<T> findFirst();
+   
+   // ---- demo ----
+   Optional<String> first = Stream.of("1", "12", "32").filter(s -> s.length() > 1).findFirst();
+   // out: "12"
+   System.out.println(first.orElse(""));
+   ```
+
+5. findAny, 寻找任意匹配, 通常用于多线程
+
+   ```java
+   Optional<T> findAny();
+   
+   // ---- demo ----
+   // 可能是"12", 也可能是"32
+   Optional<String> first = Stream.of("1", "12", "32").parallel().filter(s -> s.length() > 1).findAny();
+   ```
+
+   
+
+6. anyMatch, allMatch, noneMatch
+
+   ```java
+   // 任一匹配返回true
+   boolean anyMatch(Predicate<? super T> predicate);
+   // 全部匹配返回true
+   boolean allMatch(Predicate<? super T> predicate);
+   // 全不匹配返回true
+   boolean noneMatch(Predicate<? super T> predicate);
+   
+   // ---- demo ----
+           String[] str = {"1", "23", "4"};
+   // true
+   System.out.println(Arrays.stream(str).parallel().anyMatch(a -> a.length() == 1));
+   // false
+   System.out.println(Arrays.stream(str).parallel().allMatch(a -> a.length() == 1));
+   // false
+   System.out.println(Arrays.stream(str).parallel().noneMatch(a -> a.length() == 1));
+   ```
+
+
+
+### 收集结果
+
+1. forEach, 遍历流
+
+   ```java
+   // 任意顺序
+   void forEach(Consumer<? super T> action);
+   // 流中顺序
+   void forEachOrdered(Consumer<? super T> action);
+   ```
+
+   
+
+2. toArray, 生成Object[]数组, 或提供具体类型生成相应类型数组
+
+   ```java
+   Object[] toArray();
+   <A> A[] toArray(IntFunction<A[]> generator);
+   
+   // ---- demo ----
+   // 结果是Object[]数组
+   Stream.iterate(1, a -> a + 1).limit(5).toArray();
+   // 结果是Integer数组
+   Stream.generate(a -> 1).limit(10).toArray(Integer[]::new);
+   ```
+
+   
+
+3. collect, 可结合Collectors使用, 见下述Collectors常用方法.
+
+   ```java
+   <R, A> R collect(Collector<? super T, A, R> collector);
+   
+   // ---- demo ----
+   Stream.of(1, 2, 3).collect(Collectors.toList());
+   Stream.of(1, 2, 3).collect(Collectors.toSet());
+   
+   // 生成具体类型集合
+   TreeSet<Integer> tree = Stream.of(1, 2, 3).collect(Collectors.toCollection(TreeSet::new));
+   ArrayList<Integer> arr = Stream.of(1, 2, 3).collect(Collectors.toCollection(ArrayList::new));
+   
+   // 连接字符串
+   // out: "12"
+   String str = Stream.of("1", "2").collect(Collectors.joining());
+   // out: "1,2"
+   String str1 = Stream.of("1", "2").collect(Collectors.joining(","));
+   
+   // sum, count, average, max, min
+   // 使用summarizing(Int|Long|Double)方法, 生成(Int|Long|Double)SummaryStatistics类型结果.
+   IntSummaryStatistics summary = Stream.of("1", "df").collect(Collectors.summarizingInt(String::length));
+   double average = summary.getAverage();
+   double max = summary.getMax();
+   ```
+
+
+### Collectors常用方法
+
+1. counting, 统计元素个数
+
+   ```java
+   public static <T> Collector<T, ?, Long>
+   counting() {
+       return summingLong(e -> 1L);
+   }
+   
+   // ---- demo ----
+   // 尽管这里可以使用stream.count()代替, 但是在接收Collector对象的函数中, 这个十分有用
+   long res = Stream.of(1, 2, 3).collect(Collectors.counting);
+   System.out.println(res);
+   ```
+
+2. summing(Int|Long|Double),  根据给定的属性求和
+
+   ```java
+   // mapper根据给定流中的属性进行求和
+   public static <T> Collector<T, ?, Integer>
+   summingInt(ToIntFunction<? super T> mapper);
+   
+   // ---- demo ----
+   int res = Stream.of("1", "22", "333").collect(Collectors.summingInt(String::length));
+   System.out.println(res);
+   ```
+
+3. averaging(Int|Long|Double), 求平均值, 与summing相似
+
+4. summarizing(Int|Long|Double), 返回(Int|Long|Double)SummaryStatistics, 包含最大值, 平均值等.
+
+   ```java
+   Collector<T, ?, IntSummaryStatistics> summarizingInt(ToIntFunction<? super T> mapper);
+   ```
+
+5. joining, 连接流中元素
+
+   ```java
+   // 默认直接连接
+   public static Collector<CharSequence, ?, String> joining();
+   // 分隔符
+   public static Collector<CharSequence, ?, String> joining(CharSequence delimiter);
+   // 前后缀
+   public static Collector<CharSequence, ?, String> joining(CharSequence delimiter,
+                                                                CharSequence prefix,
+                                                                CharSequence suffix);
+   ```
+
+6. maxBy, minBy
+
+   ```java
+   // 根据comparator返回最大值, 结果存储在Optional对象中
+   public static <T> Collector<T, ?, Optional<T>>
+   maxBy(Comparator<? super T> comparator);
+   // 最小值
+   public static <T> Collector<T, ?, Optional<T>>
+   minBy(Comparator<? super T> comparator);
+   ```
+
+7. mapping
+
+8. flatMapping
+
+9. reducing
+
+10. collectingAndThen
+
+### 结果映射到map
+
+1. Colletors.toMap()
+
+   ```java
+   // 根据keyMapper, valueMapper生成map的key和value, 返回Map类型
+   Collector<T, ?, Map<K,U>> toMap(Function<? super T, ? extends K> keyMapper, 
+                                   Function<? super T, ? extends U> valueMapper)
+   // mergeFunction提供map的key冲突时解决方法
+   Collector<T, ?, Map<K,U>> toMap(Function<? super T, ? extends K> keyMapper,
+                                   Function<? super T, ? extends U> valueMapper,
+                                   BinaryOperator<U> mergeFunction)
+   // mapSupplier提供具体的map类型, 例: HashMap
+   Collector<T, ?, M> toMap(Function<? super T, ? extends K> keyMapper, 
+                            Function<? super T, ? extends U> valueMapper, 
+                            BinaryOperator<U> mergeFunction, 
+                            Supplier<M> mapSupplier)
+   // 对于以上toMap方法, 都有一个对应的toConcurrentMap方法
+     
+     
+    
+   // ---- demo ----
+   // out: {1=1, as=2, 2=1}
+   Map<String, Integer> m1 = Stream.of("1", "2", "as")
+     .collect(Collectors.toMap(Function.identity(), String::length));
+   // out: {1=[1, 2], 2=[as]}
+   Map<Integer, List<String>> m2 = Stream.of("1", "2", "as")
+               .collect(Collectors.toMap(
+                       String::length,
+                       a -> {
+                            ArrayList<String> val = new ArrayList<>();
+                            val.add(a);
+                            return val;
+                       },
+                       (str1, str2) -> {
+                           str1.addAll(str2);
+                           return str1;
+                       }
+               ));
+   // out: {1=1-1-3, 2=22}
+   HashMap<Integer, String> count = Stream.of("1", "1", "22", "3")
+               .collect(Collectors.toMap(
+                   		String::length,
+                       Function.identity(),
+                       (String a, String b) -> String.join("-", a, b), 
+                       HashMap::new
+               ));
+   
+   ```
+
+   
+
+2. Collectors.groupingBy()
+
+   ```java
+   // classifier返回值作为map的key, value为list, list中的元素为该元素本身, 默认为HashMap
+   public static <T, K> Collector<T, ?, Map<K, List<T>>> 
+   groupingBy(Function<? super T, ? extends K> classifier){
+       return groupingBy(classifier, toList());
+   }
+   // 使用downstream生成map中的value, 可使用Collectors中的toList, toSet, toMap生成不同的集合
+   // 也可使用counting, summing(Int|Long|Double), maxBy, minBy等
+   public static <T, K, A, D> Collector<T, ?, Map<K, D>> 
+   groupingBy(Function<? super T, ? extends K> classifier, 
+     				 Collector<? super T, A, D> downstream) {
+   		return groupingBy(classifier, HashMap::new, downstream);
+   }
+   // mapFactory指定map的类型
+   public static <T, K, D, A, M extends Map<K, D>> Collector<T, ?, M> 
+   groupingBy(Function<? super T, ? extends K> classifier,
+     				 Supplier<M> mapFactory,
+     				 Collector<? super T, A, D> downstream);
+   
+   ```
+
+   
+
+3. f
+
+4. f
+
+5. f
+
+6. f
+
+7. ff
+
+8. f
+
+9. f
+
+10. f
+
+11. f
+
+12. f
+
+13. f
+
+14. f
+
+15. f
+
+16. f
+
+17. f
+
+18. f
+
+19. f
+
+20. f
+
+21. f
+
+22. f
+
+23. 
