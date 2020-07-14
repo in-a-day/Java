@@ -435,44 +435,34 @@
 
    
 
-3. f
 
-4. f
+## 并行流
 
-5. f
+1. Collection.parallelStream(), 产生并行流
 
-6. f
+   ```java
+   Arrays.asList(1, 2, 3).parallelStream();
+   ```
 
-7. ff
+2. Stream.parallel产生并行流
 
-8. f
+   ```java
+   Stream.of(1, 2, 3).parallel();
+   ```
+   
+3. unordered(), 通过使用unordered()可以加快一些速度
 
-9. f
+   ```java
+   Stream.of(1, 2, 3, 4).unordered().limit(10);
+   ```
 
-10. f
+   
 
-11. f
+> 默认的parallel streams使用由ForkJoinPool.commonPool返回的` global fork-join pool `.  可以使用其他的线程池.
 
-12. f
 
-13. f
+ ```java
+ForkJoinPoll customPool = ...;
+result = customerPool.submit(() -> stream.parallel()....);
+ ```
 
-14. f
-
-15. f
-
-16. f
-
-17. f
-
-18. f
-
-19. f
-
-20. f
-
-21. f
-
-22. f
-
-23. 
