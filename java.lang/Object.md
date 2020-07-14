@@ -101,7 +101,7 @@ public final void notify()
 
 > 直到当前线程释放了该对象的锁, 唤醒的线程才会执行. 唤醒的线程将用通常的方式与其他线程竞争, 这些线程可能竞争同步该对象.例如: 被唤醒的线程锁定该对象时, 没有任何的特权和劣势.
 
-> 该方法应该只被对象监控器的拥有线程调用. 一个线程成为对象的监控器有三种方式:
+> 该方法应该只被对象监控器的拥有线程调用. 一个线程成为对象的监控器有三种方式:  
     1. 通过执行此对象的一个同步实例方法.
     2. 通过执行在该对象上同步的同步声明主体.
     3. `Class`类型对象通过执行该类的同步静态方法.
@@ -125,4 +125,42 @@ public final void wait(long timeout) throws InterruptedExcetion
 
 > 当前的线程必须属于此对象监控器.
 
-> 该方法使当前线程(T代替)进入该对象的等待集合, 然后释放该对象上的一切同步声明.线程T不再被线程计划
+> 该方法使当前线程(T代替)进入该对象的等待集, 然后释放该对象上的一切同步声明.处于线程调度目的, 线程T被禁用, 并处于休眠状态直到一下四种情况之一发生:  
+    1. 一些其他线程调用该对象notify方法并且线程T被随机选中将被线程唤醒.
+    2. 一些其他线程调用了该对象notifyAll方法
+    3. 其他线程阻塞线程T
+    4. 经过了指定的时间, 或多或少.如果超时时间为0, 那么真实的时间不再考虑, 并且线程将等待直到收到通知.</br>
+线程T接着从该对象的等待集中移除, 并在线程调度中重新启用. 然后, T以常用的方式与其他有权同步该对象的线程竞争. 一旦获得了该对象的控制权, 该对象上的所有同步声明都重置为原状, 即调用wait方法时的状态. 然后T从wait方法调用中发挥. 因此, 在wait方法返回时, 该对象和T的同步状态都是wait方法调用时的状态.
+
+> 一个线程苏醒也可以不需要通知, 中断, 或等待时间结束, 这就是所谓的伪唤醒(spurious wakeup). 尽管这种情况在实践中很少发生, 程序也必须预防它, 通过测试可能引起线程唤醒的条件, 并持续等待如果不满足条件的话. 换句话说, 等待必须发生在循环中, 像下面一样: 
+```java 
+sunchronized (obj) {
+    while (<condition does not hold>)
+        obj.wait(timeout)
+        // 执行操作
+}
+```
+
+> 如果当前线程被其他线程中断, 抛出InterruptedException. 直到此对象的lock重置为上述状态时, 才抛出该异常.
+
+> 注意, 当wait方法将当前线程放入该对象的等待集中时, 解锁该对象; 当线程等待时, 此线程的任何其他对象可能同步保持锁定.
+
+> 该方法必须被该对象监视器的拥有者调用. 如何称为对象监视器拥有者查看notify方法.
+
+##### Parameters:
+> timeout - the maximum time to wait in milliseconds.
+##### Throws:
+> IllegalArgumentException - if the value of timeout is negative.
+
+> IllegalMonitorStateException - if the current thread is not the owner of the object's monitor.
+
+> InterruptedException - if any thread interrupted the current thread before or while the current thread was waiting for a notification. The interrupted status of the current thread is cleared when this exception is thrown.
+
+---
+```java 
+protected void finalize() throws Throwable
+```
+> 当gc认为该对象没有任何引用时调用该方法. 子类重写该方法处理系统资源或执行其他清理.
+
+> 具体看effective java
+
