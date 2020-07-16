@@ -2,6 +2,8 @@
 
 # Stream
 
+> 除了Stream以外, Java还提供了(Int|Long|Double)Stream, 功能上大体一致.
+>
 > stream 大体可分为三个操作: 
 >
 > 1. 生成stream
@@ -198,7 +200,9 @@
 
 
 
-## Reductions
+## Reduction Operation
+
+> `reduction operation`(也称 fold ), 使用一系列输入元素, 通过重复`combining`操作合并他们到单个结果中. 例如寻找集合中的最大值或求和, 或将元素累积到一个list中.
 
 ### 简单的终止操作
 
@@ -277,8 +281,6 @@
    System.out.println(Arrays.stream(str).parallel().noneMatch(a -> a.length() == 1));
    ```
 
-
-
 ### 收集结果
 
 1. forEach, 遍历流
@@ -323,7 +325,7 @@
 
    
 
-4. collect, 
+4. collect
 
    ```java
    // 结合Collectors使用(更多方法见Collectors.md)
