@@ -1,32 +1,89 @@
-Interface Function<T, R>
+### Interface Function<T, R>
 
-##### Type Parameters:
-> T - the type of the input to the function
-> R - the type of the result of the function
+#### 源码
 
 ```java
-@FunctionalInterface
-public interface Function<T, R>
+public interface Function<T, R> {
+
+    /**
+     * Applies this function to the given argument.
+     *
+     * @param t the function argument
+     * @return the function result
+     */
+    R apply(T t);
+
+    /**
+     * 先调用before的apply方法, 产生结果作为此接口的apply方法的参数.
+     * Returns a composed function that first applies the {@code before}
+     * function to its input, and then applies this function to the result.
+     * If evaluation of either function throws an exception, it is relayed to
+     * the caller of the composed function.
+     *
+     * @param <V> the type of input to the {@code before} function, and to the
+     *           composed function
+     * @param before the function to apply before this function is applied
+     * @return a composed function that first applies the {@code before}
+     * function and then applies this function
+     * @throws NullPointerException if before is null
+     *
+     * @see #andThen(Function)
+     */
+    default <V> Function<V, R> compose(Function<? super V, ? extends T> before) {
+        Objects.requireNonNull(before);
+        return (V v) -> apply(before.apply(v));
+    }
+
+    /**
+     * 先调用此接口的apply方法, 产生结果作为after的apply方法的参数.
+     * Returns a composed function that first applies this function to
+     * its input, and then applies the {@code after} function to the result.
+     * If evaluation of either function throws an exception, it is relayed to
+     * the caller of the composed function.
+     *
+     * @param <V> the type of output of the {@code after} function, and of the
+     *           composed function
+     * @param after the function to apply after this function is applied
+     * @return a composed function that first applies this function and then
+     * applies the {@code after} function
+     * @throws NullPointerException if after is null
+     *
+     * @see #compose(Function)
+     */
+    default <V> Function<T, V> andThen(Function<? super R, ? extends V> after) {
+        Objects.requireNonNull(after);
+        return (T t) -> after.apply(apply(t));
+    }
+
+    /**
+     * 返回自身
+     * Returns a function that always returns its input argument.
+     *
+     * @param <T> the type of the input and output objects to the function
+     * @return a function that always returns its input argument
+     */
+    static <T> Function<T, T> identity() {
+        return t -> t;
+    }
+}
 ```
-> 接收一个参数返回一个结果. 函数式方法`apply(Object)`.
+
+
+
+#### demo
 
 ```java
-R apply(T t)
-将给定的参数应用到该方法上
-```
-##### Parameters:
-> t - 参数
-##### Returns:
-> 方法结果
+public class TestFunction {
+    public static void main(String[] args) {
+        Function<Integer, String> f = a -> String.valueOf(a);
+        System.out.println(f.apply(12));  // 12
 
-```java
-default <V> Function<V, R> compose(Function<? super V, ? extends T> before)
-```
-> 返回一个组合函数接口, 即先调用`before`的apply()方法,再调用该该函数接口的apply方法
-> 如果任意函数抛出异常, 该异常被传递给组合的函数.
->
+        Function<Integer, String> g = f.compose(a -> a - 1);
+        System.out.println(g.apply(12));  // 11
 
-```java
-default <V> Function<T, V> andThen(Function<? super R, ? extends T> after)
+        Function<Integer, Integer> h = f.andThen(String::length);
+        System.out.println(h.apply(12));  // 2
+    }
+}
 ```
-> 接收一个转化R类型为T类型的函数式接口after, 在调用原接口`apply()`后调用after的`apply()`方法
+

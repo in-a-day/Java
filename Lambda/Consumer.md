@@ -1,21 +1,59 @@
-Interface Consumer
+### Interface Consumer
 
-> 表示接收一个参数并且没有返回值得操作. 不像其他得函数式接口, Consumer带有副作用  
-> functional interface: accept()
-
-```java
-void accept(T t)
-```
-##### Parameters:
-> 输入参数
+#### 源码
 
 ```java
-defualt Consumer(T t) andThen(Consumer<? super T> after)
-```
-##### Parameters:
-> after - 执行当前操作后需要执行得操作
-##### Returns:
-> 先执行该accept()在执行after的accept()的组合Consumer
-##### Exception
-> NullPointerException - if after is null
+/**
+ * Represents an operation that accepts a single input argument and returns no
+ * result. Unlike most other functional interfaces, {@code Consumer} is expected
+ * to operate via side-effects.
+ *
+ * <p>This is a <a href="package-summary.html">functional interface</a>
+ * whose functional method is {@link #accept(Object)}.
+ *
+ * @param <T> the type of the input to the operation
+ *
+ * @since 1.8
+ */
+@FunctionalInterface
+public interface Consumer<T> {
 
+    /**
+     * Performs this operation on the given argument.
+     *
+     * @param t the input argument
+     */
+    void accept(T t);
+
+    /**
+     * 先执行此接口的accept, 在执行after的accept
+     * Returns a composed {@code Consumer} that performs, in sequence, this
+     * operation followed by the {@code after} operation. If performing either
+     * operation throws an exception, it is relayed to the caller of the
+     * composed operation.  If performing this operation throws an exception,
+     * the {@code after} operation will not be performed.
+     *
+     * @param after the operation to perform after this operation
+     * @return a composed {@code Consumer} that performs in sequence this
+     * operation followed by the {@code after} operation
+     * @throws NullPointerException if {@code after} is null
+     */
+    default Consumer<T> andThen(Consumer<? super T> after) {
+        Objects.requireNonNull(after);
+        return (T t) -> { accept(t); after.accept(t); };
+    }
+}
+```
+
+#### demo
+
+```java
+public class TestConsumer {
+    public static void main(String[] args) {
+        Consumer<String> c = a -> System.out.println(a);
+        c.accept("qwer");
+        c.andThen(a -> System.out.println("after: " + a))
+                .accept("qwer");
+    }
+}
+```
